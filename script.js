@@ -5,15 +5,17 @@
 // BANKIST APP
 
 // Data
+let currentUser = {};
+
 const account1 = {
-  owner: 'Jonas Schmedtmann',
+  owner: 'js',
   movements: [200, 450, -400, 3000, -650, -130, 70, 1300],
   interestRate: 1.2, // %
   pin: 1111,
 };
 
 const account2 = {
-  owner: 'Jessica Davis',
+  owner: 'jd',
   movements: [5000, 3400, -150, -790, -3210, -1000, 8500, -30],
   interestRate: 1.5,
   pin: 2222,
@@ -61,16 +63,78 @@ const inputLoanAmount = document.querySelector('.form__input--loan-amount');
 const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-// LECTURES
+// ---------------Display Users Details------------
+const displayDetails = function (user) {
+  // Display Screen
+  document.querySelector('.app').style.opacity = 1;
 
-const currencies = new Map([
-  ['USD', 'United States dollar'],
-  ['EUR', 'Euro'],
-  ['GBP', 'Pound sterling'],
-]);
+  // Display Current Balance
+  const currentBalance = user.movements.reduce((acc, cur) => acc + cur);
+  user.currentBalance = currentBalance;
+  labelBalance.textContent = currentBalance;
 
-const movements = [200, 450, -400, 3000, -650, -130, 70, 1300];
+  // Calculate and Display Summary
+  labelSumIn.textContent = user.movements
+    .filter(input => input > 0)
+    .reduce((acc, cur) => acc + cur);
 
-/////////////////////////////////////////////////
+  labelSumOut.textContent = user.movements
+    .filter(input => input < 0)
+    .reduce((acc, cur) => acc + cur);
+
+  labelSumInterest.textContent =
+    (labelSumIn.textContent / 100) * user.interestRate;
+
+  // Display Movements
+  user.movements.forEach(mov => {
+    const html = `<div class="movements__row">
+    <div class="movements__type ${
+      mov > 0 ? 'movements__type--deposit' : 'movements__type--withdrawal'
+    }">2 deposit</div>
+    <div class="movements__date">3 days ago</div>
+    <div class="movements__value">${mov}€</div>
+  </div>`;
+
+    containerMovements.insertAdjacentHTML('afterbegin', html);
+  });
+
+  // Start logout timer
+};
+
+// --------------EVENT HANDLERS-------------------
+
+// -----KEEP IT OPEN-------------
+// displayDetails(accounts[0]);
+
+// LOGIIN
+btnLogin.addEventListener('click', function (e) {
+  e.preventDefault();
+
+  const user = accounts.find(
+    account => account.owner === inputLoginUsername.value
+  );
+  if (user.pin === Number(inputLoginPin.value)) {
+    displayDetails(user);
+  }
+  currentUser = user;
+});
+
+// TRANSFER MONEY
+btnTransfer.addEventListener('click', function (e) {
+  e.preventDefault();
+  const amount = Number(inputTransferAmount.value);
+  const recipient = accounts.find(
+    account => account.owner === inputTransferTo.value
+  );
+
+  if (recipient && recipient !== currentUser) {
+    // Update amounts
+    currentUser.movements.push(-amount);
+    recipient.movements.push(amount);
+
+    // Update Summary
+    displayDetails(currentUser);
+  }
+});
+
+// REQUEST LOAN
